@@ -19,7 +19,7 @@ jobs:
 
       - name: Create credentials file
         run: |
-          echo "${{ secrets.GCP_CREDENTIALS }}" > credentials.json
+          echo '${{ secrets.GCP_CREDENTIALS }}' > credentials.json
           chmod 600 credentials.json
 
       - name: Run Docker Container
