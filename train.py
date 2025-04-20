@@ -20,7 +20,7 @@ TEST_YEAR = 2024
 TEST_MONTH = 3
 
 
-def main():
+def main(feature_engineering: bool = False):
     credentials_dict = json.loads(os.getenv("GCP_CREDENTIALS"))
     credentials_dict["private_key"] = credentials_dict["private_key"].replace(
         "\\n", "\n"
@@ -44,17 +44,15 @@ def main():
         write_parameters=True,
     )
 
-    print("Feature engineering...")
-    pipeline.feature_engineer(
-        transaction_table_name=GCP_TABLE_ID_TRAIN,
-    )
-    print("Feature engineering done")
+    if feature_engineering:
+        pipeline.feature_engineer(
+            transaction_table_name=GCP_TABLE_ID_TRAIN,
+        )
+        print("Feature engineering done")
 
-    print("Training...")
     pipeline.train_automl_model()
     print("Training done")
 
-    print("Deploying...")
     pipeline.deploy_model()
     print("Deploying done")
 

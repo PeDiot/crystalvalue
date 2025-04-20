@@ -16,6 +16,7 @@ COPY . .
 
 # Set environment variables
 ENV PYTHONPATH=/app
+ENV GCP_CREDENTIALS=${GCP_CREDENTIALS}
 
 # Run the training script
 CMD ["python", "train.py"] 
