@@ -21,52 +21,49 @@ from src import ga4_data
 
 
 class GA4DataTest(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.ga4_project_id = "ga4_project"
+        self.ga4_dataset_id = "ga4_dataset"
+        self.ga4_events_table_name = "ga4_events"
 
-  def setUp(self):
-    super().setUp()
-    self.ga4_project_id = 'ga4_project'
-    self.ga4_dataset_id = 'ga4_dataset'
-    self.ga4_events_table_name = 'ga4_events'
-
-  def test_read_yaml_file(self):
-    yaml_content = """
+    def test_read_yaml_file(self):
+        yaml_content = """
     event_name:
       - test_event
     event_params:
       test_event:
         - test_event_param
     """
-    expected_dict = {
-        'event_name': ['test_event'],
-        'event_params': {'test_event': ['test_event_param']},
-    }
-    with tempfile.NamedTemporaryFile() as temp_file:
+        expected_dict = {
+            "event_name": ["test_event"],
+            "event_params": {"test_event": ["test_event_param"]},
+        }
+        with tempfile.NamedTemporaryFile() as temp_file:
+            with open(temp_file.name, "w") as f:
+                f.write(yaml_content)
 
-      with open(temp_file.name, 'w') as f:
-        f.write(yaml_content)
+            read_from_file = ga4_data._read_yaml_file(temp_file.name)
+            self.assertEqual(read_from_file, expected_dict)
 
-      read_from_file = ga4_data._read_yaml_file(temp_file.name)
-      self.assertEqual(read_from_file, expected_dict)
+    def test_ga4_query_substitutions(self):
+        sample_yaml = {
+            "event_name": ["test_event"],
+            "event_params": {"test_event": ["test_event_param"]},
+            "user_properties": ["test_user_property"],
+            "other": ["test.other"],
+        }
 
-  def test_ga4_query_substitutions(self):
-    sample_yaml = {
-        'event_name': ['test_event'],
-        'event_params': {'test_event': ['test_event_param']},
-        'user_properties': ['test_user_property'],
-        'other': ['test.other']
-    }
-
-    with mock.patch.object(
-        ga4_data, '_read_yaml_file', return_value=sample_yaml
-    ):
-      query = ga4_data.build_ga4_query(
-          ga4_project_id=self.ga4_project_id,
-          ga4_dataset_id=self.ga4_dataset_id,
-          ga4_events_table_name=self.ga4_events_table_name,
-      )
-      expected_event_name_str = ('event_name = "test_event" '
-                                 'AS event_is_test_event')
-      expected_event_params_str = """
+        with mock.patch.object(ga4_data, "_read_yaml_file", return_value=sample_yaml):
+            query = ga4_data.build_ga4_query(
+                ga4_project_id=self.ga4_project_id,
+                ga4_dataset_id=self.ga4_dataset_id,
+                ga4_events_table_name=self.ga4_events_table_name,
+            )
+            expected_event_name_str = (
+                'event_name = "test_event" ' "AS event_is_test_event"
+            )
+            expected_event_params_str = """
           (
             IF(
               event_name = 'test_event',
@@ -80,7 +77,7 @@ class GA4DataTest(unittest.TestCase):
             )
           ) AS test_event_test_event_param"""
 
-      expected_user_properties_str = """
+            expected_user_properties_str = """
           IFNULL(
             (
               SELECT
@@ -90,40 +87,34 @@ class GA4DataTest(unittest.TestCase):
             ),
             '(not set)') AS user_test_user_property"""
 
-      expected_other_str = 'test.other AS test_other'
+            expected_other_str = "test.other AS test_other"
 
-      # Remove extra whitespace because of indentation before comparing strings.
-      self.assertIn(
-          ' '.join(expected_event_name_str.split()),
-          ' '.join(query.split())
-      )
-      self.assertIn(
-          ' '.join(expected_event_params_str.split()),
-          ' '.join(query.split())
-      )
-      self.assertIn(
-          ' '.join(expected_user_properties_str.split()),
-          ' '.join(query.split())
-      )
-      self.assertIn(
-          ' '.join(expected_other_str.split()),
-          ' '.join(query.split())
-      )
+            # Remove extra whitespace because of indentation before comparing strings.
+            self.assertIn(
+                " ".join(expected_event_name_str.split()), " ".join(query.split())
+            )
+            self.assertIn(
+                " ".join(expected_event_params_str.split()), " ".join(query.split())
+            )
+            self.assertIn(
+                " ".join(expected_user_properties_str.split()), " ".join(query.split())
+            )
+            self.assertIn(" ".join(expected_other_str.split()), " ".join(query.split()))
 
-  def test_write_file(self):
-    sample_query = """
+    def test_write_file(self):
+        sample_query = """
     SELECT
       test_column
     FROM
       `test_project.test_dataset.test_table`
     """
 
-    with tempfile.NamedTemporaryFile() as temp_file:
-      ga4_data._write_file(sample_query, temp_file.name)
-      with open(temp_file.name, 'r') as f:
-        read_from_file = f.read()
-      self.assertEqual(sample_query, read_from_file)
+        with tempfile.NamedTemporaryFile() as temp_file:
+            ga4_data._write_file(sample_query, temp_file.name)
+            with open(temp_file.name, "r") as f:
+                read_from_file = f.read()
+            self.assertEqual(sample_query, read_from_file)
 
 
-if __name__ == '__main__':
-  unittest.main()
+if __name__ == "__main__":
+    unittest.main()

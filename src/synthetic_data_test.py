@@ -20,12 +20,13 @@ from src import synthetic_data
 
 
 class SyntheticDataTest(unittest.TestCase):
+    def test_synthetic_data_creates_expected_rows(self):
+        number_rows = 100
+        data = synthetic_data.create_synthetic_data(
+            row_count=number_rows, load_table_to_bigquery=False
+        )
+        self.assertEqual(len(data), number_rows)
 
-  def test_synthetic_data_creates_expected_rows(self):
-    number_rows = 100
-    data = synthetic_data.create_synthetic_data(
-        row_count=number_rows, load_table_to_bigquery=False)
-    self.assertEqual(len(data), number_rows)
 
-if __name__ == '__main__':
-  unittest.main()
+if __name__ == "__main__":
+    unittest.main()
