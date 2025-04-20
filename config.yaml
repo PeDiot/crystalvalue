@@ -1,0 +1,17 @@
+project_id: "pltv-457408"
+dataset_id: "crystalvalue"
+table_id: "crystalvalue_train_data"
+target_column: future_value
+train_val_test_split_column: predefined_split_column 
+category_columns:
+  - unique_list_order_index
+  - unique_list_shipping_address_zip
+excluded_columns:
+  - customer_id
+  - window_date
+  - lookback_start
+  - lookahead_start
+  - lookahead_stop
+  - future_value_classification
+n_samples: 1000
+n_trials: 10
