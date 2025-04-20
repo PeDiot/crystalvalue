@@ -1,5 +1,3 @@
-import os, json
-from google.oauth2 import service_account
 from src import crystalvalue
 
 
@@ -21,19 +19,9 @@ TEST_MONTH = 3
 
 
 def main(feature_engineering: bool = False):
-    credentials_dict = json.loads(os.getenv("GCP_CREDENTIALS"))
-    credentials_dict["private_key"] = credentials_dict["private_key"].replace(
-        "\\n", "\n"
-    )
-
-    credentials = service_account.Credentials.from_service_account_info(
-        info=credentials_dict
-    )
-
     pipeline = crystalvalue.CrystalValue(
         project_id=GCP_PROJECT_ID,
         dataset_id=GCP_DATASET_ID,
-        credentials=credentials,
         customer_id_column=CUSTOMER_ID_COLUMN,
         date_column=DATE_COLUMN,
         value_column=VALUE_COLUMN,

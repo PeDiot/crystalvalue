@@ -17,7 +17,14 @@ jobs:
       - name: Build Docker Image
         run: docker build -t crystalvalue-train .
 
+      - name: Create credentials file
+        run: |
+          echo "${{ secrets.GCP_CREDENTIALS }}" > credentials.json
+          chmod 600 credentials.json
+
       - name: Run Docker Container
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-        run: docker run -e GCP_CREDENTIALS crystalvalue-train 
+        run: |
+          docker run \
+            -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json \
+            -v $(pwd)/credentials.json:/app/credentials.json \
+            crystalvalue-train 
