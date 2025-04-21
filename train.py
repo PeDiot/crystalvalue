@@ -14,11 +14,8 @@ IGNORE_COLUMNS = ["order_number", "days_to_next_order"]
 LOOKBACK_DAYS = 365
 LOOKAHEAD_DAYS = 365
 
-TEST_YEAR = 2024
-TEST_MONTH = 3
 
-
-def main(feature_engineering: bool = False):
+def main(feature_engineering: bool = True):
     pipeline = crystalvalue.CrystalValue(
         project_id=GCP_PROJECT_ID,
         dataset_id=GCP_DATASET_ID,
@@ -27,7 +24,7 @@ def main(feature_engineering: bool = False):
         value_column=VALUE_COLUMN,
         days_lookback=LOOKBACK_DAYS,
         days_lookahead=LOOKAHEAD_DAYS,
-        ignore_columns=IGNORE_COLUMNS,
+        ignore_columns=IGNORE_COLUMNS + [VALUE_COLUMN],
         location=GCP_LOCATION,
         write_parameters=True,
     )
