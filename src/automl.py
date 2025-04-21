@@ -34,7 +34,7 @@ automl.train_automl_model(
 
 import logging
 import re
-from typing import List
+from typing import List, Any, Optional
 
 from google.cloud import bigquery
 from google.cloud import aiplatform
@@ -61,6 +61,7 @@ def create_automl_dataset(
     table_name: str = "training_data",
     dataset_display_name: str = "crystalvalue_dataset",
     location: str = "europe-west4",
+    credentials: Optional[Any] = None
 ) -> aiplatform.datasets.tabular_dataset.TabularDataset:
     """Creates AutoML Dataset in the AI Platform.
 
@@ -82,7 +83,11 @@ def create_automl_dataset(
     )
     bigquery_uri = f"bq://{project_id}.{dataset_id}.{table_name}"
 
-    aiplatform.init(project=project_id, location=location)
+    aiplatform.init(
+        project=project_id, 
+        location=location, 
+        credentials=credentials
+    )
     dataset = aiplatform.TabularDataset.create(
         display_name=dataset_display_name, bq_source=bigquery_uri
     )
@@ -101,6 +106,7 @@ def train_automl_model(
     optimization_prediction_type: str = "regression",
     budget_milli_node_hours: int = 1000,
     location: str = "europe-west4",
+    credentials: Optional[Any] = None
 ) -> aiplatform.models.Model:
     """Trains an AutoML model given an AutoML Dataset.
 
@@ -146,7 +152,12 @@ def train_automl_model(
         if feature not in _NON_FEATURES
     ]
 
-    aiplatform.init(project=project_id, location=location)
+    aiplatform.init(
+        project=project_id, 
+        location=location, 
+        credentials=credentials
+    )
+
     job = aiplatform.AutoMLTabularTrainingJob(
         display_name=model_display_name,
         optimization_prediction_type=optimization_prediction_type,
@@ -254,6 +265,7 @@ def deploy_model(
     model_id: str,
     machine_type: str = "n1-standard-2",
     location: str = "europe-west4",
+    credentials: Optional[Any] = None
 ) -> aiplatform.Model:
     """Creates an endpoint and deploys Vertex AI Tabular AutoML model.
 
@@ -266,7 +278,7 @@ def deploy_model(
     Returns:
       Deployed model object.
     """
-    aiplatform.init(project=bigquery_client.project, location=location)
+    aiplatform.init(project=bigquery_client.project, location=location, credentials=credentials)
     model = aiplatform.Model(model_name=model_id)
     model.deploy(machine_type=machine_type)
     model.wait()

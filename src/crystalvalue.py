@@ -174,7 +174,8 @@ class CrystalValue:
     write_parameters: bool = False
     parameters_filename: str = "crystalvalue_parameters.json"
     bigquery_client: Optional[bigquery.Client] = None
-
+    machine_type: str = "e2-standard-2"
+    
     def __post_init__(self):
         logging.info("Using Google Cloud Project: %r", self.project_id)
         logging.info("Using dataset_id: %r", self.dataset_id)
@@ -525,6 +526,7 @@ class CrystalValue:
             optimization_prediction_type=optimization_prediction_type,
             budget_milli_node_hours=budget_milli_node_hours,
             location=self.location,
+            credentials=self.credentials
         )
         self.model_id = model.name
         self._write_parameters_to_file()
@@ -602,7 +604,7 @@ class CrystalValue:
             model_id = self.model_id
         if not endpoint_id:
             if not self.endpoint_id:
-                model = aiplatform.Model(model_id, location=self.location)
+                model = aiplatform.Model(model_id, location=self.location, credentials=self.credentials)
                 endpoint_id = model.gca_resource.deployed_models[0].endpoint.split("/")[
                     -1
                 ]
@@ -664,7 +666,9 @@ class CrystalValue:
         model = automl.deploy_model(
             bigquery_client=self.bigquery_client,
             model_id=model_id,
+            machine_type=self.machine_type,
             location=self.location,
+            credentials=self.credentials
         )
         model.wait()
         return model
@@ -702,7 +706,7 @@ class CrystalValue:
             model_id = self.model_id
         if not endpoint_id:
             if not self.endpoint_id:
-                model = aiplatform.Model(model_id, location=self.location)
+                model = aiplatform.Model(model_id, location=self.location, credentials=self.credentials)
                 endpoint_id = model.gca_resource.deployed_models[0].endpoint.split("/")[
                     -1
                 ]
@@ -723,6 +727,83 @@ class CrystalValue:
         table_id = f"{self.project_id}.{self.dataset_id}.{table_name}"
         self.bigquery_client.delete_table(table_id, not_found_ok=True)
         logging.info("Deleted table %r", table_id)
+
+    def delete_model(self, model_id: Optional[str] = None) -> None:
+        """Deletes the Vertex AI model and its associated endpoint.
+
+        Args:
+            model_id: The ID of the model to delete. If not provided, uses the model_id
+                stored in the class instance.
+        """
+        if model_id is None:
+            model_id = self.model_id
+        if not model_id:
+            logging.warning("No model_id provided or found in instance")
+            return
+
+        try:
+            # Initialize Vertex AI
+            aiplatform.init(
+                project=self.project_id, 
+                location=self.location, 
+                credentials=self.credentials
+            )
+            
+            # Get the model
+            model = aiplatform.Model(model_id)
+            
+            # Delete the endpoint if it exists
+            if hasattr(model, 'gca_resource') and model.gca_resource.deployed_models:
+                endpoint_id = model.gca_resource.deployed_models[0].endpoint.split("/")[-1]
+                endpoint = aiplatform.Endpoint(endpoint_id)
+                endpoint.delete()
+                logging.info("Deleted endpoint %r", endpoint_id)
+            
+            # Delete the model
+            model.delete()
+            logging.info("Deleted model %r", model_id)
+            
+            # Clear the stored model_id and endpoint_id
+            self.model_id = None
+            self.endpoint_id = None
+            
+        except Exception as e:
+            logging.error("Error deleting model %r: %r", model_id, str(e))
+            raise
+
+    def delete_training_pipeline(self, pipeline_id: Optional[str] = None) -> None:
+        """Deletes the Vertex AI training pipeline.
+
+        Args:
+            pipeline_id: The ID of the training pipeline to delete. If not provided,
+                attempts to find the pipeline associated with the model.
+        """
+        try:
+            # Initialize Vertex AI
+            aiplatform.init(
+                project=self.project_id, 
+                location=self.location, 
+                credentials=self.credentials
+            )
+            
+            if pipeline_id is None and self.model_id:
+                # Try to find the pipeline associated with the model
+                model = aiplatform.Model(self.model_id)
+                if hasattr(model, 'gca_resource') and model.gca_resource.training_pipeline:
+                    pipeline_id = model.gca_resource.training_pipeline.split("/")[-1]
+            
+            if not pipeline_id:
+                logging.warning("No pipeline_id provided or found")
+                return
+            
+            # Delete the training pipeline
+            pipeline = aiplatform.TrainingPipeline(pipeline_id)
+            pipeline.delete()
+            logging.info("Deleted training pipeline %r", pipeline_id)
+            
+        except Exception as e:
+            logging.error("Error deleting training pipeline %r: %r", pipeline_id, str(e))
+            raise
 
     def create_storage_bucket(
         self, bucket_name: Optional[str] = None
