@@ -19,3 +19,6 @@ pillow>=10.0.1
 # Machine Learning
 tensorflow~=2.7
 kfp>=1.8.9
+
+# Protocol Buffers
+protobuf==3.20.3

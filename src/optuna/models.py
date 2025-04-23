@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 
 import optuna, numpy as np
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 
@@ -11,9 +12,9 @@ from .config import Config
 
 
 class BaseModel(ABC):
-    def __init__(self, trial: optuna.Trial, config: Config):
-        self.trial = trial
+    def __init__(self, config: Config, trial: Optional[optuna.Trial] = None):
         self.config = config
+        self.trial = trial
         self.model = self._create_model()
 
     @abstractmethod
@@ -29,6 +30,9 @@ class BaseModel(ABC):
 
 class RandomForestModel(BaseModel):
     def _create_model(self) -> RandomForestRegressor:
+        if self.trial is None:
+            return RandomForestRegressor(random_state=self.config.random_state)
+        
         return RandomForestRegressor(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             max_depth=self.trial.suggest_int("max_depth", 3, 20),
@@ -43,6 +47,9 @@ class RandomForestModel(BaseModel):
 
 class XGBoostModel(BaseModel):
     def _create_model(self) -> XGBRegressor:
+        if self.trial is None:
+            return XGBRegressor(random_state=self.config.random_state)
+        
         return XGBRegressor(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             learning_rate=self.trial.suggest_float("learning_rate", 0.01, 0.3),
@@ -56,6 +63,9 @@ class XGBoostModel(BaseModel):
 
 class LightGBMModel(BaseModel):
     def _create_model(self) -> LGBMRegressor:
+        if self.trial is None:
+            return LGBMRegressor(random_state=self.config.random_state)
+        
         return LGBMRegressor(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             learning_rate=self.trial.suggest_float("learning_rate", 0.01, 0.3),
@@ -68,20 +78,32 @@ class LightGBMModel(BaseModel):
         )
 
 
+class LinearRegressionModel(BaseModel):
+    def _create_model(self) -> LinearRegression:
+        if self.trial is None:
+            return LinearRegression()
+
+        return LinearRegression(
+            fit_intercept=self.trial.suggest_categorical("fit_intercept", [True, False]),
+            n_jobs=-1
+        )
+
+
 class ModelFactory:
     @staticmethod
     def create_model(
         model_name: str, 
-        trial: optuna.Trial, 
-        config: Config
+        config: Config, 
+        trial: Optional[optuna.Trial] = None, 
     ) -> BaseModel:
         model_classes = {
             "random_forest": RandomForestModel,
             "xgboost": XGBoostModel,
             "lightgbm": LightGBMModel,
+            "linear_regression": LinearRegressionModel,
         }
 
         if model_name not in model_classes:
             raise ValueError(f"Unknown model type: {model_name}")
 
-        return model_classes[model_name](trial, config)
+        return model_classes[model_name](config, trial)

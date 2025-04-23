@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 
 import pandas as pd, numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -11,15 +11,29 @@ class DataLoader:
     def __init__(
         self, 
         config: Config, 
-        preprocessor: Optional[ColumnTransformer] = None
+        preprocessor: Optional[ColumnTransformer] = None, 
+        gcp_credentials: Optional[Any] = None
     ):
         self.config = config
         self.preprocessor = preprocessor
+        self.gcp_credentials = gcp_credentials
+
+        self._training_data = None
+        self._test_data = None
+
+    @property
+    def training_data(self) -> pd.DataFrame:
+        return self._training_data
+    
+    @property
+    def test_data(self) -> pd.DataFrame:
+        return self._test_data
         
     def load_training_data(
         self
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         df = self._run_query(is_training=True)
+        self._training_data = df
 
         X, y, train_val_split = self._select_features(df)
         X_train, X_val, y_train, y_val = self._train_val_split(X, y, train_val_split)
@@ -27,10 +41,11 @@ class DataLoader:
 
         return X_train, X_val, y_train, y_val
     
-    def load_predict_data(
+    def load_test_data(
         self
     ) -> Tuple[np.ndarray, np.ndarray]:
         df = self._run_query(is_training=False)
+        self._test_data = df
 
         X, y, _ = self._select_features(df)        
         X = self.preprocessor.transform(X)
@@ -80,7 +95,8 @@ class DataLoader:
             query=query,
             project_id=self.config.project_id,
             use_bqstorage_api=True, 
-            progress_bar_type="tqdm"
+            progress_bar_type="tqdm", 
+            credentials=self.gcp_credentials
         )
     
     def _query(self, is_training: bool) -> str:        

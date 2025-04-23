@@ -15,4 +15,4 @@ excluded_columns:
   - future_value_classification
 n_samples: -1
 stratified: false
-n_trials: 20
+n_trials: 50

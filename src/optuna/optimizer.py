@@ -26,7 +26,11 @@ class ModelOptimizer:
             "model", ["random_forest", "xgboost", "lightgbm"]
         )
 
-        model = ModelFactory.create_model(model_name, trial, self.config)
+        model = ModelFactory.create_model(
+            model_name=model_name,
+            config=self.config,
+            trial=trial
+        )
         model.fit(self.X_train, self.y_train)
 
         y_pred = model.predict(self.X_val)
