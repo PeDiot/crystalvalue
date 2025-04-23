@@ -4,8 +4,8 @@ table_id: "crystalvalue_train_data"
 target_column: future_value
 train_val_test_split_column: predefined_split_column 
 category_columns:
-  - unique_list_order_index
-  - unique_list_shipping_address_zip
+  - order_index
+  - shipping_address_zip
 excluded_columns:
   - customer_id
   - window_date
@@ -13,6 +13,6 @@ excluded_columns:
   - lookahead_start
   - lookahead_stop
   - future_value_classification
-n_samples: 1000000
+n_samples: -1
 stratified: false
 n_trials: 20
