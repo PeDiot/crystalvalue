@@ -14,6 +14,7 @@ class Config:
     category_columns: List[str] = field(default_factory=lambda: [])
     excluded_columns: List[str] = field(default_factory=lambda: [])
     n_samples: int = -1
+    stratified: bool = False
     n_trials: int = 100
     timeout: int = 3600
     random_state: int = 42

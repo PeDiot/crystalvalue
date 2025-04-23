@@ -6,3 +6,4 @@ models/
 .ipynb_checkpoints/
 *.json
 *.db
+*.png

@@ -291,6 +291,7 @@ def predict_using_deployed_model(
     endpoint: str,
     features: pd.DataFrame,
     location: str = "europe-west4",
+    credentials: Optional[Any] = None
 ) -> List[float]:
     """Create predictions using a deployed model from a Pandas DataFrame.
 
@@ -304,7 +305,7 @@ def predict_using_deployed_model(
       Prediction values.
     """
 
-    aiplatform.init(project=project_id, location=location)
+    aiplatform.init(project=project_id, location=location, credentials=credentials)
     endpoint = aiplatform.Endpoint(endpoint)
 
     # Ensure objects such as dates are strings and not datetime.

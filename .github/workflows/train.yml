@@ -19,12 +19,12 @@ jobs:
 
       - name: Create credentials file
         run: |
-          echo '${{ secrets.GCP_CREDENTIALS }}' > credentials.json
-          chmod 600 credentials.json
+          echo '${{ secrets.GCP_CREDENTIALS }}' > gcp_credentials.json
+          chmod 600 gcp_credentials.json
 
       - name: Run Docker Container
         run: |
           docker run \
-            -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json \
-            -v $(pwd)/credentials.json:/app/credentials.json \
+            -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp_credentials.json \
+            -v $(pwd)/gcp_credentials.json:/app/gcp_credentials.json \
             crystalvalue-train 

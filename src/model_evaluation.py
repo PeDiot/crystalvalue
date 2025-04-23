@@ -14,7 +14,7 @@
 """Module for evaluating models built via CrystalValue pipeline."""
 
 import logging
-
+from typing import Any, Optional
 from google.cloud import bigquery
 import matplotlib.pyplot as plt
 import numpy as np
@@ -137,6 +137,7 @@ def evaluate_model_predictions(
     training_data_name: str = "crystalvalue_train_data",
     table_evaluation_stats: str = "test_set_evaluation",
     location: str = "europe-west4",
+    credentials: Optional[Any] = None,
     number_bins: int = 10,
     round_decimal_places: int = 2,
 ) -> pd.DataFrame:
@@ -182,6 +183,7 @@ def evaluate_model_predictions(
         endpoint=endpoint,
         features=data,
         location=location,
+        credentials=credentials,
     )
 
     spearman_correlation = round(

@@ -1,8 +1,7 @@
 import optuna, logging, numpy as np
+from datetime import datetime
 from sklearn.metrics import mean_squared_error, r2_score
-import os
 
-from .config import Config
 from .models import ModelFactory
 from .data import DataLoader
 
@@ -10,16 +9,17 @@ logger = logging.getLogger(__name__)
 
 
 class ModelOptimizer:
-    def __init__(self, data_loader: DataLoader, config: Config):
+    def __init__(self, data_loader: DataLoader):
         self.data_loader = data_loader
-        self.config = config
+        self.config = data_loader.config
+        self.study_name = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         (
             self.X_train,
             self.X_val,
             self.y_train,
             self.y_val,
-        ) = self.data_loader.load_data()
+        ) = self.data_loader.load_training_data()
 
     def objective(self, trial: optuna.Trial) -> float:
         model_name = trial.suggest_categorical(
@@ -44,7 +44,7 @@ class ModelOptimizer:
         study = optuna.create_study(
             direction="minimize",
             storage=self.config.storage_name,
-            study_name="model_optimization",
+            study_name=self.study_name,
             load_if_exists=True
         )
         

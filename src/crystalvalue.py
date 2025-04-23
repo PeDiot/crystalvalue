@@ -719,6 +719,7 @@ class CrystalValue:
             model_id=self.model_id,
             table_evaluation_stats=table_evaluation_stats,
             location=self.location,
+            credentials=self.credentials,
             number_bins=number_bins,
         )
 

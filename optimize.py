@@ -22,7 +22,7 @@ def main():
         data_loader = DataLoader(config=config)
 
         logger.info("Starting model optimization...")
-        optimizer = ModelOptimizer(data_loader=data_loader, config=config)
+        optimizer = ModelOptimizer(data_loader=data_loader)
         best_trial = optimizer.optimize()
 
         logger.info("Creating and saving the best model...")
@@ -32,8 +32,8 @@ def main():
         ModelSaver.save_model(
             model=best_model,
             preprocessor=data_loader.preprocessor,
-            model_name=best_trial.params["model"], 
-            save_dir=config.save_dir
+            model_name=best_trial.params['model'], 
+            save_dir=f"{config.save_dir}/{optimizer.study_name}"
         )
 
         logger.info("Optimization completed successfully!")

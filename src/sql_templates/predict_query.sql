@@ -1,59 +1,62 @@
-# Copyright 2021 Google LLC.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
--- Build predict dataset for a machine learning model to predict LTV.
-
--- @param days_lookback INT The number of days to look back to create features.
--- @param customer_id_column STRING The column containing the customer ID.
--- @param date_column STRING The column containing the transaction date.
--- @param value_column STRING The column containing the value column.
--- @param features_sql STRING The SQL for the features and transformations.
-
 WITH
-  WindowDate AS (
-    SELECT DATE(MAX({date_column})) as date
+  FirstPurchaseDates AS (
+    SELECT 
+      CAST({customer_id_column} AS STRING) AS customer_id,
+      MIN(DATE({date_column})) AS first_purchase_date
     FROM {project_id}.{dataset_id}.{table_name}
+    GROUP BY 1
   ),
   CustomerWindows AS (
-    SELECT
-      CAST(TX_DATA.{customer_id_column} AS STRING) AS customer_id,
-      WindowDate.date AS window_date,
-      DATE_SUB((WindowDate.date), INTERVAL {days_lookback} day) AS lookback_start,
-      DATE_ADD((WindowDate.date), INTERVAL 1 day) AS lookahead_start,
-      DATE_ADD((WindowDate.date), INTERVAL {days_lookahead} day) AS lookahead_stop
-    FROM {project_id}.{dataset_id}.{table_name} AS TX_DATA
-    {date_window_join_sql}
-    GROUP BY 1, 2, 3, 4
+    SELECT DISTINCT
+      FirstPurchaseDates.customer_id,
+      FirstPurchaseDates.first_purchase_date AS window_date,
+      DATE_SUB(FirstPurchaseDates.first_purchase_date, INTERVAL {days_lookback} day) AS lookback_start,
+      DATE_ADD(FirstPurchaseDates.first_purchase_date, INTERVAL 1 day) AS lookahead_start,
+      DATE_ADD(FirstPurchaseDates.first_purchase_date, INTERVAL {days_lookahead} day) AS lookahead_stop
+    FROM FirstPurchaseDates
+    WHERE FirstPurchaseDates.first_purchase_date >= DATE_ADD(
+      (SELECT MIN({date_column}) FROM {project_id}.{dataset_id}.{table_name}),
+      INTERVAL {days_lookback} DAY
+    )
   )
-SELECT
-  CustomerWindows.*,
-  IFNULL(
-    DATE_DIFF(CustomerWindows.window_date, MAX(DATE(TX_DATA.{date_column})), DAY),
-    {days_lookback}) AS days_since_last_transaction,
-  IFNULL(
-    DATE_DIFF(CustomerWindows.window_date, MIN(DATE(TX_DATA.{date_column})), DAY),
-    {days_lookback}) AS days_since_first_transaction,
-  COUNT(*) AS count_transactions,
-  {features_sql}
-FROM
-  CustomerWindows
-JOIN
-  {project_id}.{dataset_id}.{table_name} AS TX_DATA
-  ON (
-    CAST(TX_DATA.{customer_id_column} AS STRING) = CustomerWindows.customer_id
-    AND DATE(TX_DATA.{date_column})
-      BETWEEN CustomerWindows.lookback_start
-      AND DATE(CustomerWindows.window_date))
-GROUP BY
-  1, 2, 3, 4, 5;
+  , Dataset AS (
+    SELECT
+      CustomerWindows.*,
+      IFNULL(
+        DATE_DIFF(CustomerWindows.window_date, MAX(DATE(TX_DATA.{date_column})), DAY),
+        {days_lookback}) AS days_since_last_transaction,
+      IFNULL(
+        DATE_DIFF(CustomerWindows.window_date, MIN(DATE(TX_DATA.{date_column})), DAY),
+        {days_lookback}) AS days_since_first_transaction,
+      COUNT(*) AS count_transactions,
+      {features_sql}
+    FROM
+      CustomerWindows
+    JOIN
+      {project_id}.{dataset_id}.{table_name} AS TX_DATA
+      ON (
+        CAST(TX_DATA.{customer_id_column} AS STRING) = CustomerWindows.customer_id
+        AND DATE(TX_DATA.{date_column}) BETWEEN CustomerWindows.lookback_start AND DATE(CustomerWindows.window_date))
+    GROUP BY
+      1, 2, 3, 4, 5
+  )
+SELECT 
+  customer_id,
+  window_date,
+  lookback_start,
+  lookahead_start,
+  lookahead_stop,
+  future_value,
+  future_value_classification,
+  predefined_split_column,
+  avg_value AS value, 
+  avg_value_cat1 AS value_cat1,
+  avg_value_cat2 AS value_cat2,
+  avg_value_cat3 AS value_cat3,
+  avg_value_cat4 AS value_cat4,
+  avg_value_cat5 AS value_cat5,
+  avg_value_cat6 AS value_cat6,
+  avg_value_uncategorized AS value_uncategorized,
+  unique_list_shipping_address_zip AS shipping_address_zip,
+  unique_list_order_index AS order_index
+FROM Dataset;
