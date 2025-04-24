@@ -156,4 +156,4 @@ def main(mode: Literal["regression", "classification"]):
 
 
 if __name__ == "__main__":
-    main()
+    main(mode="classification")
