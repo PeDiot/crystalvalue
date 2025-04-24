@@ -98,7 +98,7 @@ def train_automl_model(
     ]
 
     job = aiplatform.AutoMLTabularTrainingJob(
-        display_name=GCP_DATASET_ID,
+        display_name=config.model_display_name,
         optimization_prediction_type=config.optimization_prediction_type,
         optimization_objective=config.optimization_objective,
         column_transformations=transformations,
@@ -156,4 +156,4 @@ def main(mode: Literal["regression", "classification"]):
 
 
 if __name__ == "__main__":
-    main(mode="classification")
+    main(mode="regression")
