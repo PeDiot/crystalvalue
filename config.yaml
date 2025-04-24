@@ -1,11 +1,11 @@
 project_id: "pltv-457408"
-dataset_id: "crystalvalue"
+dataset_id: "crystalvalue_20250424_104512"
 table_id: "crystalvalue_train_data"
 target_column: future_value
 train_val_test_split_column: predefined_split_column 
 category_columns:
-  - order_index
-  - shipping_address_zip
+  - unique_list_order_index
+  - unique_list_shipping_address_reg
 excluded_columns:
   - customer_id
   - window_date
@@ -16,3 +16,7 @@ excluded_columns:
 n_samples: -1
 stratified: false
 n_trials: 50
+feature_selection: true
+min_features: 5
+max_features: 50
+feature_selection_method: "variance"  # Options: "variance", "mutual_info", "f_regression"

@@ -1,7 +1,11 @@
 from typing import List
-import yaml
 from dataclasses import dataclass, field
+
+import yaml
 from pathlib import Path
+
+
+VALID_FEATURE_SELECTION_METHODS = ["variance", "mutual_info", "f_regression"]
 
 
 @dataclass
@@ -20,6 +24,16 @@ class Config:
     random_state: int = 42
     storage_name: str = "sqlite:///optuna_study.db"
     save_dir: str = "./models"
+    feature_selection: bool = False
+    min_features: int = 5
+    max_features: int = 50
+    feature_selection_method: str = "variance"
+
+    def __post_init__(self):
+        if self.feature_selection:
+            assert (
+                self.feature_selection_method in VALID_FEATURE_SELECTION_METHODS
+            ), "Invalid feature selection method"
 
     @classmethod
     def from_yaml(cls, yaml_path: str = "config.yaml") -> "Config":
