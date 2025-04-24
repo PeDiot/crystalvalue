@@ -68,7 +68,7 @@ class DataLoader:
         categorical_features = X_train.select_dtypes(include=['object', 'category']).columns
         
         num_transformer = ("num", StandardScaler(), numeric_features)
-        cat_transformer = ("cat", OneHotEncoder(handle_unknown='ignore'), categorical_features)
+        cat_transformer = ("cat", OneHotEncoder(handle_unknown='ignore', drop='first'), categorical_features)
         
         self.preprocessor = ColumnTransformer(
             transformers=[num_transformer, cat_transformer]
