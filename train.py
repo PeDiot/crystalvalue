@@ -6,13 +6,13 @@ CREDENTIALS_PATH = "gcp_credentials.json"
 
 GCP_PROJECT_ID = "pltv-457408"
 GCP_LOCATION = "europe-west4"
-GCP_DATASET_ID = "crystalvalue"
+GCP_DATASET_ID = "crystalvalue_20250424_104512"
 GCP_TABLE_ID = "data"
 
 CUSTOMER_ID_COLUMN = "customer_id"
 DATE_COLUMN = "date"
 VALUE_COLUMN = "value"
-IGNORE_COLUMNS = ["order_number", "days_to_next_order"]
+IGNORE_COLUMNS = ["order_number", "days_to_next_order", "shipping_address_dept"]
 
 LOOKBACK_DAYS = 0
 LOOKAHEAD_DAYS = 365
@@ -44,7 +44,10 @@ def main(feature_engineering: bool = False):
         )
         print("Feature engineering done")
 
-    pipeline.train_automl_model()
+    pipeline.train_automl_model(
+        dataset_display_name=GCP_DATASET_ID,
+        model_display_name=GCP_DATASET_ID
+    )
     print("Training done")
 
     pipeline.deploy_model()
