@@ -10,7 +10,7 @@ CREDENTIALS_PATH = "gcp_credentials.json"
 
 GCP_PROJECT_ID = "pltv-457408"
 GCP_LOCATION = "europe-west4"
-GCP_DATASET_ID = "crystalvalue_20250424_104512"
+GCP_DATASET_ID = "crystalvalue_20250424_123433"
 GCP_TABLE_ID = "crystalvalue_train_data"
 
 CUSTOMER_ID_COLUMN = "customer_id"
