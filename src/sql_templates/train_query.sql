@@ -71,23 +71,4 @@ WITH
     GROUP BY
       1, 2, 3, 4, 5, 6, 7
   )
-SELECT 
-  customer_id,
-  window_date,
-  lookback_start,
-  lookahead_start,
-  lookahead_stop,
-  future_value,
-  future_value_classification,
-  predefined_split_column,
-  avg_value AS value, 
-  avg_value_cat1 AS value_cat1,
-  avg_value_cat2 AS value_cat2,
-  avg_value_cat3 AS value_cat3,
-  avg_value_cat4 AS value_cat4,
-  avg_value_cat5 AS value_cat5,
-  avg_value_cat6 AS value_cat6,
-  avg_value_uncategorized AS value_uncategorized,
-  unique_list_shipping_address_zip AS shipping_address_zip,
-  unique_list_order_index AS order_index
-FROM Dataset;
+SELECT * FROM Dataset;
