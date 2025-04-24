@@ -92,11 +92,11 @@ from google.cloud import exceptions
 from google.cloud import storage
 import numpy as np
 import pandas as pd
-from src import automl
-from src import feature_engineering
-from src import ga4_data
-from src import model_evaluation
-from src import synthetic_data
+from crystalvalue import automl
+from crystalvalue import feature_engineering
+from crystalvalue import ga4_data
+from crystalvalue import model_evaluation
+from crystalvalue import synthetic_data
 
 
 def load_parameters_from_file(

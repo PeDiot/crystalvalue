@@ -17,7 +17,7 @@ import unittest
 from google.cloud import bigquery
 import mock
 
-from src import feature_engineering
+from crystalvalue import feature_engineering
 
 
 class FeatureEngineeringTest(unittest.TestCase):

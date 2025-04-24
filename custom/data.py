@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Any
+from typing import Tuple, Optional, Any, List
 
 import pandas as pd, numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -20,6 +20,7 @@ class DataLoader:
 
         self._training_data = None
         self._test_data = None
+        self._feature_names = None
 
     @property
     def training_data(self) -> pd.DataFrame:
@@ -28,11 +29,15 @@ class DataLoader:
     @property
     def test_data(self) -> pd.DataFrame:
         return self._test_data
+    
+    @property
+    def feature_names(self) -> List[str]:
+        return self._feature_names
         
     def load_training_data(
-        self
+        self, only_positive_samples: bool = False
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        df = self._run_query(is_training=True)
+        df = self._run_query(is_training=True, only_positive_samples=only_positive_samples)
         self._training_data = df
 
         X, y, train_val_split = self._select_features(df)
@@ -83,13 +88,15 @@ class DataLoader:
         train_val_split = df[self.config.train_val_test_split_column]
         
         to_drop_columns = [self.config.target_column, self.config.train_val_test_split_column]
+        self._feature_names = [col for col in df.columns if col not in to_drop_columns]
+
         X = df.drop(columns=to_drop_columns)
         y = df[self.config.target_column]
 
         return X, y, train_val_split    
     
-    def _run_query(self, is_training: bool) -> pd.DataFrame:
-        query = self._query(is_training)
+    def _run_query(self, is_training: bool, only_positive_samples: bool = False) -> pd.DataFrame:
+        query = self._query(is_training, only_positive_samples)
         
         return pd.read_gbq(
             query=query,
@@ -99,7 +106,7 @@ class DataLoader:
             credentials=self.gcp_credentials
         )
     
-    def _query(self, is_training: bool) -> str:        
+    def _query(self, is_training: bool, only_positive_samples: bool = False) -> str:        
         excluded_columns_str = ", ".join([f"{col}" for col in self.config.excluded_columns])
 
         if is_training and self.config.stratified:
@@ -111,8 +118,11 @@ class DataLoader:
             else:
                 where_clause = f"WHERE {self.config.train_val_test_split_column} = 'TEST'"
 
+            if only_positive_samples:
+                where_clause += f" AND future_value_classification = 1"
+
             query = f"""
-            SELECT * EXCEPT({excluded_columns_str}, future_value), future_value
+            SELECT * EXCEPT({excluded_columns_str}, {self.config.target_column}), {self.config.target_column}
             FROM {self.config.dataset_id}.{self.config.table_id}
             {where_clause}
             """

@@ -23,8 +23,8 @@ from scipy import stats
 import seaborn as sns
 from sklearn import metrics
 
-from src import automl
-from src import feature_engineering
+from crystalvalue import automl
+from crystalvalue import feature_engineering
 
 
 def get_test_set(

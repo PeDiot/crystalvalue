@@ -1,7 +1,7 @@
 project_id: "pltv-457408"
-dataset_id: "crystalvalue_20250424_104512"
+dataset_id: "crystalvalue_20250424_123433"
 table_id: "crystalvalue_train_data"
-target_column: future_value
+target_column: future_value   # Options: "future_value", "future_value_classification"
 train_val_test_split_column: predefined_split_column 
 category_columns:
   - unique_list_order_index
@@ -12,11 +12,10 @@ excluded_columns:
   - lookback_start
   - lookahead_start
   - lookahead_stop
-  - future_value_classification
 n_samples: -1
 stratified: false
 n_trials: 50
 feature_selection: true
 min_features: 5
 max_features: 50
-feature_selection_method: "variance"  # Options: "variance", "mutual_info", "f_regression"
+feature_selection_method: "mutual_info"  # Options: "variance", "mutual_info", "f_regression"

@@ -17,7 +17,7 @@ import unittest
 
 import mock
 
-from src import ga4_data
+from crystalvalue import ga4_data
 
 
 class GA4DataTest(unittest.TestCase):

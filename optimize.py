@@ -4,11 +4,11 @@ import logging
 
 from google.oauth2 import service_account
 
-from src.optuna.config import Config
-from src.optuna.data import DataLoader
-from src.optuna.optimizer import ModelOptimizer
-from src.optuna.models import ModelFactory
-from src.optuna.utils import ModelSaver
+from custom.config import Config
+from custom.data import DataLoader
+from custom.optimizer import ModelOptimizer
+from custom.models import ModelFactory
+from custom.utils import ModelSaver
 
 
 CREDENTIALS_PATH = "secrets/gcp_credentials.json"
@@ -44,6 +44,7 @@ def main():
         ModelSaver.save_model(
             model=best_model,
             preprocessor=loader.preprocessor,
+            feature_selector=optimizer.feature_selector,
             model_name=best_trial.params['model'], 
             save_dir=f"{config.save_dir}/{optimizer.study_name}"
         )

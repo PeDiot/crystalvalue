@@ -16,7 +16,7 @@
 
 import unittest
 
-from src import synthetic_data
+from crystalvalue import synthetic_data
 
 
 class SyntheticDataTest(unittest.TestCase):
