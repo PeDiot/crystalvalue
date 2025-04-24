@@ -1,5 +1,4 @@
 import logging
-from typing import Any, Optional
 
 from google.cloud import aiplatform, bigquery
 from google.oauth2 import service_account
@@ -10,7 +9,7 @@ CREDENTIALS_PATH = "gcp_credentials.json"
 GCP_PROJECT_ID = "pltv-457408"
 GCP_LOCATION = "europe-west4"
 GCP_DATASET_ID = "crystalvalue_20250424_104512"
-GCP_TABLE_ID = "data"
+GCP_TABLE_ID = "crystalvalue_train_data"
 
 CUSTOMER_ID_COLUMN = "customer_id"
 DATE_COLUMN = "date"
@@ -32,46 +31,36 @@ _NON_FEATURES = [
 ]
 
 
-def create_automl_dataset(
-    project_id: str,
-    dataset_id: str,
-    table_name: str = "training_data",
-    dataset_display_name: str = "crystalvalue_dataset",
-    location: str = "europe-west4",
-    credentials: Optional[Any] = None
-) -> aiplatform.datasets.tabular_dataset.TabularDataset:
+def create_automl_dataset() -> aiplatform.datasets.tabular_dataset.TabularDataset:
     logging.info(
-        "Creating Vertex AI Dataset with display name %r", dataset_display_name
+        "Creating Vertex AI Dataset with display name %r", GCP_DATASET_ID
     )
-    bigquery_uri = f"bq://{project_id}.{dataset_id}.{table_name}"
+    bigquery_uri = f"bq://{GCP_PROJECT_ID}.{GCP_DATASET_ID}.{GCP_TABLE_ID}"
 
     aiplatform.init(
-        project=project_id, 
-        location=location, 
+        project=GCP_PROJECT_ID, 
+        location=GCP_LOCATION, 
         credentials=credentials
     )
     dataset = aiplatform.TabularDataset.create(
-        display_name=dataset_display_name, bq_source=bigquery_uri
+        display_name=GCP_DATASET_ID, bq_source=bigquery_uri
     )
 
     dataset.wait()
+
     return dataset
 
 
 def train_automl_model(
-    project_id: str,
     aiplatform_dataset: aiplatform.TabularDataset,
-    model_display_name: str = "crystalvalue_model",
     predefined_split_column_name: str = "predefined_split_column",
     target_column: str = "future_value",
     optimization_objective: str = "minimize-rmse",
     optimization_prediction_type: str = "regression",
     budget_milli_node_hours: int = 1000,
-    location: str = "europe-west4",
-    credentials: Optional[Any] = None
 ) -> aiplatform.models.Model:
     logging.info(
-        "Creating Vertex AI AutoML model with display name %r", model_display_name
+        "Creating Vertex AI AutoML model with display name %r", GCP_DATASET_ID
     )
 
     transformations = [
@@ -81,13 +70,13 @@ def train_automl_model(
     ]
 
     aiplatform.init(
-        project=project_id, 
-        location=location, 
+        project=GCP_PROJECT_ID, 
+        location=GCP_LOCATION, 
         credentials=credentials
     )
 
     job = aiplatform.AutoMLTabularTrainingJob(
-        display_name=model_display_name,
+        display_name=GCP_DATASET_ID,
         optimization_prediction_type=optimization_prediction_type,
         optimization_objective=optimization_objective,
         column_transformations=transformations,
@@ -97,7 +86,7 @@ def train_automl_model(
         dataset=aiplatform_dataset,
         target_column=target_column,
         budget_milli_node_hours=budget_milli_node_hours,
-        model_display_name=model_display_name,
+        model_display_name=GCP_DATASET_ID,
         predefined_split_column_name=predefined_split_column_name,
     )
 
@@ -106,14 +95,10 @@ def train_automl_model(
     return model
 
 
-def deploy_model(
-    bigquery_client: bigquery.Client,
-    model_id: str,
-    machine_type: str = "n1-standard-2",
-    location: str = "europe-west4",
-    credentials: Optional[Any] = None
-) -> aiplatform.Model:
-    aiplatform.init(project=bigquery_client.project, location=location, credentials=credentials)
+def deploy_model(model_id: str, machine_type: str = "n1-standard-2") -> aiplatform.Model:
+    bq_client = bigquery.Client(credentials=credentials)
+
+    aiplatform.init(project=bq_client.project, location=GCP_LOCATION, credentials=credentials)
     model = aiplatform.Model(model_name=model_id)
     model.deploy(machine_type=machine_type)
     model.wait()
@@ -124,34 +109,14 @@ def deploy_model(
 
 
 def main():
+    global credentials
     credentials = service_account.Credentials.from_service_account_file(
         filename=CREDENTIALS_PATH
     )
 
-    bq_client = bigquery.Client(credentials=credentials)
-
-    dataset = create_automl_dataset(
-        project_id=GCP_PROJECT_ID,
-        dataset_id=GCP_DATASET_ID,
-        table_name=GCP_TABLE_ID,
-        location=GCP_LOCATION,
-        credentials=credentials
-    )
-
-    model = train_automl_model(
-        project_id=GCP_PROJECT_ID,
-        aiplatform_dataset=dataset,
-        model_display_name="crystalvalue_model",
-        location=GCP_LOCATION,
-        credentials=credentials
-    )
-
-    deploy_model(
-        bigquery_client=bq_client,
-        model_id=model.name,
-        location=GCP_LOCATION,
-        credentials=credentials
-    )
+    dataset = create_automl_dataset()
+    model = train_automl_model(aiplatform_dataset=dataset)
+    deploy_model(model.name)
 
 
 if __name__ == "__main__":
