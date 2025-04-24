@@ -331,6 +331,9 @@ class CrystalValue:
         transaction_table_name: str,
         query_type: str = "train_query",
         write_executed_query_file: Optional[str] = None,
+        numerical_transformations: Optional[Collection[str]] = None,
+        string_transformations: Optional[Collection[str]] = None,
+        columns_to_exclude: Optional[List[str]] = None,
     ) -> pd.DataFrame:
         """Builds train or predict query from transaction data through BigQuery.
 
@@ -370,7 +373,7 @@ class CrystalValue:
                 for feature in self.input_data_types[feature_type]:
                     logging.info("Detected %r feature %r", feature_type, feature)
 
-        query, features_types = feature_engineering.build_query(
+        kwargs = dict(
             query_type=query_type,
             bigquery_client=self.bigquery_client,
             dataset_id=self.dataset_id,
@@ -384,7 +387,15 @@ class CrystalValue:
             value_column=self.value_column,
             trigger_event_date_column=self.trigger_event_date_column,
             wait_days_to_score_from_event=self.wait_days_to_score_from_event,
+            columns_to_exclude=columns_to_exclude,
         )
+        if numerical_transformations:
+            kwargs["numerical_transformations"] = numerical_transformations
+        if string_transformations:
+            kwargs["string_transformations"] = string_transformations
+
+        query, features_types = feature_engineering.build_query(**kwargs)
+    
         self.features_types = features_types
         table_name = ""
         if query_type == "train_query":
