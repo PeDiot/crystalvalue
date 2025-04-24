@@ -205,17 +205,18 @@ def evaluate_model_predictions(
         labels=np.arange(number_bins, 0, -1),
     ).astype(int)
 
-    revenue_shares = pd.concat(
-        [pd.DataFrame(), pd.Series(dtype="object")], ignore_index=True
-    )
-
+    revenue_shares = dict()
     total_value = data["future_value"].sum()
     data = data.sort_values("predicted_value", ascending=False)
+
     for i in [0.01, 0.05, 0.10]:
         number_of_rows = int(i * len(data))
-        revenue_shares[
-            f"top_{int(i * 100)}_percent_predicted_customers_value_share"
-        ] = np.divide(data[:number_of_rows]["future_value"].sum(), total_value)
+        num = data[:number_of_rows]["future_value"].sum()
+        value = np.divide(num, total_value)
+        key = f"top_{int(i * 100)}_percent_predicted_customers_value_share"
+        revenue_shares[key] = value
+
+    revenue_shares = pd.DataFrame(data=revenue_shares, index=[0])
     revenue_shares = revenue_shares.round(round_decimal_places)
 
     bin_summary = (

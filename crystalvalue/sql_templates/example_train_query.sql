@@ -49,11 +49,12 @@ WITH
   CustomerWindows AS (
     SELECT DISTINCT
       CAST(TX_DATA.{customer_id_column} AS STRING) AS customer_id,
-      DateWindowsTable.window_date AS window_date,
-      DATE_SUB(DateWindowsTable.window_date, INTERVAL {days_lookback} day) AS lookback_start,
-      DATE_ADD(DateWindowsTable.window_date, INTERVAL 1 day) AS lookahead_start,
-      DATE_ADD(DateWindowsTable.window_date, INTERVAL {days_lookahead} day) AS lookahead_stop
+      D.window_date AS window_date,
+      DATE_SUB(D.window_date, INTERVAL {days_lookback} day) AS lookback_start,
+      DATE_ADD(D.window_date, INTERVAL 1 day) AS lookahead_start,
+      DATE_ADD(D.window_date, INTERVAL {days_lookahead} day) AS lookahead_stop
     FROM {project_id}.{dataset_id}.{table_name} AS TX_DATA
+    CROSS JOIN DateWindowsTable D
     {date_window_join_sql}
   ),
   Target AS (

@@ -37,7 +37,7 @@ class RandomForestModel(BaseModel):
     def _create_model(self) -> RandomForestRegressor:
         if self.trial is None:
             return RandomForestRegressor(random_state=self.config.random_state)
-        
+
         return RandomForestRegressor(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             max_depth=self.trial.suggest_int("max_depth", 3, 20),
@@ -54,7 +54,7 @@ class XGBoostModel(BaseModel):
     def _create_model(self) -> XGBRegressor:
         if self.trial is None:
             return XGBRegressor(random_state=self.config.random_state)
-        
+
         return XGBRegressor(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             learning_rate=self.trial.suggest_float("learning_rate", 0.01, 0.3),
@@ -70,7 +70,7 @@ class LightGBMModel(BaseModel):
     def _create_model(self) -> LGBMRegressor:
         if self.trial is None:
             return LGBMRegressor(random_state=self.config.random_state)
-        
+
         return LGBMRegressor(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             learning_rate=self.trial.suggest_float("learning_rate", 0.01, 0.3),
@@ -89,8 +89,10 @@ class LinearRegressionModel(BaseModel):
             return LinearRegression()
 
         return LinearRegression(
-            fit_intercept=self.trial.suggest_categorical("fit_intercept", [True, False]),
-            n_jobs=-1
+            fit_intercept=self.trial.suggest_categorical(
+                "fit_intercept", [True, False]
+            ),
+            n_jobs=-1,
         )
 
 
@@ -98,7 +100,7 @@ class RandomForestClassifierModel(BaseClassificationModel):
     def _create_model(self) -> RandomForestClassifier:
         if self.trial is None:
             return RandomForestClassifier(random_state=self.config.random_state)
-        
+
         return RandomForestClassifier(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             max_depth=self.trial.suggest_int("max_depth", 3, 20),
@@ -115,7 +117,7 @@ class XGBoostClassifierModel(BaseClassificationModel):
     def _create_model(self) -> XGBClassifier:
         if self.trial is None:
             return XGBClassifier(random_state=self.config.random_state)
-        
+
         return XGBClassifier(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             learning_rate=self.trial.suggest_float("learning_rate", 0.01, 0.3),
@@ -131,7 +133,7 @@ class LightGBMClassifierModel(BaseClassificationModel):
     def _create_model(self) -> LGBMClassifier:
         if self.trial is None:
             return LGBMClassifier(random_state=self.config.random_state)
-        
+
         return LGBMClassifier(
             n_estimators=self.trial.suggest_int("n_estimators", 100, 1000),
             learning_rate=self.trial.suggest_float("learning_rate", 0.01, 0.3),
@@ -151,8 +153,12 @@ class LogisticRegressionModel(BaseClassificationModel):
 
         return LogisticRegression(
             C=self.trial.suggest_float("C", 0.1, 10.0),
-            penalty=self.trial.suggest_categorical("penalty", ["l1", "l2", "elasticnet", None]),
-            solver=self.trial.suggest_categorical("solver", ["newton-cg", "lbfgs", "liblinear", "sag", "saga"]),
+            penalty=self.trial.suggest_categorical(
+                "penalty", ["l1", "l2", "elasticnet", None]
+            ),
+            solver=self.trial.suggest_categorical(
+                "solver", ["newton-cg", "lbfgs", "liblinear", "sag", "saga"]
+            ),
             max_iter=self.trial.suggest_int("max_iter", 100, 1000),
             random_state=self.config.random_state,
         )
@@ -161,9 +167,9 @@ class LogisticRegressionModel(BaseClassificationModel):
 class ModelFactory:
     @staticmethod
     def create_model(
-        model_name: str, 
-        config: Config, 
-        trial: Optional[optuna.Trial] = None, 
+        model_name: str,
+        config: Config,
+        trial: Optional[optuna.Trial] = None,
     ) -> BaseModel:
         model_classes = {
             "random_forest": RandomForestModel,

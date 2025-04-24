@@ -38,7 +38,9 @@ _STRING_TRANSFORMATIONS_DEFS = {
 # SQL templates library
 _QUERY_TEMPLATE_FILES = {
     "train_query": "crystalvalue/sql_templates/train_query.sql",
+    "example_train_query": "crystalvalue/sql_templates/example_train_query.sql",
     "predict_query": "crystalvalue/sql_templates/predict_query.sql",
+    "example_predict_query": "crystalvalue/sql_templates/example_predict_query.sql",
 }
 _STATIC_NUMERIC_FEATURES = (
     "days_since_last_transaction",
@@ -47,7 +49,9 @@ _STATIC_NUMERIC_FEATURES = (
 )
 
 _BASE_SELECT_QUERY = "SELECT * FROM Dataset"
-_CUSTOM_SELECT_QUERY = lambda columns_to_exclude: f"SELECT * EXCEPT({', '.join(columns_to_exclude)}) FROM Dataset"
+_CUSTOM_SELECT_QUERY = (
+    lambda columns_to_exclude: f"SELECT * EXCEPT({', '.join(columns_to_exclude)}) FROM Dataset"
+)
 
 
 def run_load_table_to_bigquery(
@@ -403,8 +407,7 @@ def build_query(
 
     if columns_to_exclude:
         substituted_query = substituted_query.replace(
-            _BASE_SELECT_QUERY, 
-            _CUSTOM_SELECT_QUERY(columns_to_exclude)
+            _BASE_SELECT_QUERY, _CUSTOM_SELECT_QUERY(columns_to_exclude)
         )
 
     if write_executed_query_file:
@@ -420,7 +423,7 @@ def run_query(
     query_sql: Optional[str] = None,
     query_file: Optional[str] = None,
     location: str = "europe-west4",
-) -> pd.DataFrame:
+) -> bool:
     """Runs a query in BigQuery and returns the result.
 
     Args:
@@ -430,9 +433,6 @@ def run_query(
       query_sql: The SQL query to execute.
       query_file: Path to the SQL query to execute.
       location: The location to write the table in BigQuery.
-
-    Returns:
-      The result of the executed query as a Pandas DataFrame.
     """
     if query_file:
         query = _read_file(query_file)
@@ -446,10 +446,12 @@ def run_query(
         destination=table_id,
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
     )
-    data = (
-        bigquery_client.query(query, job_config=job_config, location=location)
-        .result()
-        .to_dataframe()
-    )
-    logging.info("Created table %r in location %r", table_id, location)
-    return data
+
+    try:
+        bigquery_client.query(query, job_config=job_config, location=location).result()
+        logging.info("Created table %r in location %r", table_id, location)
+        return True
+
+    except Exception as e:
+        logging.error(f"Error running query: {e}")
+        return False

@@ -175,7 +175,7 @@ class CrystalValue:
     parameters_filename: str = "crystalvalue_parameters.json"
     bigquery_client: Optional[bigquery.Client] = None
     machine_type: str = "e2-standard-2"
-    
+
     def __post_init__(self):
         logging.info("Using Google Cloud Project: %r", self.project_id)
         logging.info("Using dataset_id: %r", self.dataset_id)
@@ -395,12 +395,12 @@ class CrystalValue:
             kwargs["string_transformations"] = string_transformations
 
         query, features_types = feature_engineering.build_query(**kwargs)
-    
+
         self.features_types = features_types
         table_name = ""
-        if query_type == "train_query":
+        if query_type in ["train_query", "example_train_query"]:
             table_name = self.training_table_name
-        elif query_type == "predict_query":
+        elif query_type in ["predict_query", "example_predict_query"]:
             table_name = self.predict_table_name
 
         return self.run_query(query_sql=query, destination_table_name=table_name)
@@ -537,7 +537,7 @@ class CrystalValue:
             optimization_prediction_type=optimization_prediction_type,
             budget_milli_node_hours=budget_milli_node_hours,
             location=self.location,
-            credentials=self.credentials
+            credentials=self.credentials,
         )
         self.model_id = model.name
         self._write_parameters_to_file()
@@ -615,7 +615,9 @@ class CrystalValue:
             model_id = self.model_id
         if not endpoint_id:
             if not self.endpoint_id:
-                model = aiplatform.Model(model_id, location=self.location, credentials=self.credentials)
+                model = aiplatform.Model(
+                    model_id, location=self.location, credentials=self.credentials
+                )
                 endpoint_id = model.gca_resource.deployed_models[0].endpoint.split("/")[
                     -1
                 ]
@@ -679,7 +681,7 @@ class CrystalValue:
             model_id=model_id,
             machine_type=self.machine_type,
             location=self.location,
-            credentials=self.credentials
+            credentials=self.credentials,
         )
         model.wait()
         return model
@@ -717,7 +719,9 @@ class CrystalValue:
             model_id = self.model_id
         if not endpoint_id:
             if not self.endpoint_id:
-                model = aiplatform.Model(model_id, location=self.location, credentials=self.credentials)
+                model = aiplatform.Model(
+                    model_id, location=self.location, credentials=self.credentials
+                )
                 endpoint_id = model.gca_resource.deployed_models[0].endpoint.split("/")[
                     -1
                 ]
@@ -756,29 +760,31 @@ class CrystalValue:
         try:
             # Initialize Vertex AI
             aiplatform.init(
-                project=self.project_id, 
-                location=self.location, 
-                credentials=self.credentials
+                project=self.project_id,
+                location=self.location,
+                credentials=self.credentials,
             )
-            
+
             # Get the model
             model = aiplatform.Model(model_id)
-            
+
             # Delete the endpoint if it exists
-            if hasattr(model, 'gca_resource') and model.gca_resource.deployed_models:
-                endpoint_id = model.gca_resource.deployed_models[0].endpoint.split("/")[-1]
+            if hasattr(model, "gca_resource") and model.gca_resource.deployed_models:
+                endpoint_id = model.gca_resource.deployed_models[0].endpoint.split("/")[
+                    -1
+                ]
                 endpoint = aiplatform.Endpoint(endpoint_id)
                 endpoint.delete()
                 logging.info("Deleted endpoint %r", endpoint_id)
-            
+
             # Delete the model
             model.delete()
             logging.info("Deleted model %r", model_id)
-            
+
             # Clear the stored model_id and endpoint_id
             self.model_id = None
             self.endpoint_id = None
-            
+
         except Exception as e:
             logging.error("Error deleting model %r: %r", model_id, str(e))
             raise
@@ -793,28 +799,33 @@ class CrystalValue:
         try:
             # Initialize Vertex AI
             aiplatform.init(
-                project=self.project_id, 
-                location=self.location, 
-                credentials=self.credentials
+                project=self.project_id,
+                location=self.location,
+                credentials=self.credentials,
             )
-            
+
             if pipeline_id is None and self.model_id:
                 # Try to find the pipeline associated with the model
                 model = aiplatform.Model(self.model_id)
-                if hasattr(model, 'gca_resource') and model.gca_resource.training_pipeline:
+                if (
+                    hasattr(model, "gca_resource")
+                    and model.gca_resource.training_pipeline
+                ):
                     pipeline_id = model.gca_resource.training_pipeline.split("/")[-1]
-            
+
             if not pipeline_id:
                 logging.warning("No pipeline_id provided or found")
                 return
-            
+
             # Delete the training pipeline
             pipeline = aiplatform.TrainingPipeline(pipeline_id)
             pipeline.delete()
             logging.info("Deleted training pipeline %r", pipeline_id)
-            
+
         except Exception as e:
-            logging.error("Error deleting training pipeline %r: %r", pipeline_id, str(e))
+            logging.error(
+                "Error deleting training pipeline %r: %r", pipeline_id, str(e)
+            )
             raise
 
     def create_storage_bucket(

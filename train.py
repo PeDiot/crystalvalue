@@ -10,13 +10,18 @@ CREDENTIALS_PATH = "gcp_credentials.json"
 
 GCP_PROJECT_ID = "pltv-457408"
 GCP_LOCATION = "europe-west4"
-GCP_DATASET_ID = "crystalvalue_20250424_190800"
+GCP_DATASET_ID = "crystalvalue_20250424_230018"
 GCP_TABLE_ID = "crystalvalue_train_data"
 
 CUSTOMER_ID_COLUMN = "customer_id"
 DATE_COLUMN = "date"
 VALUE_COLUMN = "value"
-IGNORE_COLUMNS = ["order_number", "days_to_next_order", "shipping_address_dept", "value"]
+IGNORE_COLUMNS = [
+    "order_number",
+    "days_to_next_order",
+    "shipping_address_dept",
+    "value",
+]
 
 LOOKBACK_DAYS = 0
 LOOKAHEAD_DAYS = 90
@@ -55,9 +60,7 @@ class TrainingConfig:
 
 
 def create_automl_dataset() -> aiplatform.datasets.tabular_dataset.TabularDataset:
-    logging.info(
-        "Creating Vertex AI Dataset with display name %r", GCP_DATASET_ID
-    )
+    logging.info("Creating Vertex AI Dataset with display name %r", GCP_DATASET_ID)
     bigquery_uri = f"bq://{GCP_PROJECT_ID}.{GCP_DATASET_ID}.{GCP_TABLE_ID}"
 
     dataset = aiplatform.TabularDataset.create(
@@ -70,14 +73,17 @@ def create_automl_dataset() -> aiplatform.datasets.tabular_dataset.TabularDatase
 
 
 def load_automl_dataset() -> aiplatform.datasets.tabular_dataset.TabularDataset:
-    logging.info("Attempting to load existing Vertex AI Dataset with display name %r", GCP_DATASET_ID)
-    
+    logging.info(
+        "Attempting to load existing Vertex AI Dataset with display name %r",
+        GCP_DATASET_ID,
+    )
+
     datasets = aiplatform.TabularDataset.list()
     for dataset in datasets:
         if dataset.display_name == GCP_DATASET_ID:
             logging.info("Found existing dataset with display name %r", GCP_DATASET_ID)
             return dataset
-    
+
     logging.info("No existing dataset found with display name %r", GCP_DATASET_ID)
 
     return None
@@ -87,9 +93,7 @@ def train_automl_model(
     aiplatform_dataset: aiplatform.TabularDataset,
     config: TrainingConfig,
 ) -> aiplatform.models.Model:
-    logging.info(
-        "Creating Vertex AI AutoML model with display name %r", GCP_DATASET_ID
-    )
+    logging.info("Creating Vertex AI AutoML model with display name %r", GCP_DATASET_ID)
 
     transformations = [
         {"auto": {"column_name": f"{feature}"}}
@@ -117,14 +121,18 @@ def train_automl_model(
     return model
 
 
-def deploy_model(model_id: str, machine_type: str = "n1-standard-2") -> aiplatform.Model:
+def deploy_model(
+    model_id: str, machine_type: str = "n1-standard-2"
+) -> aiplatform.Model:
     bq_client = bigquery.Client(credentials=credentials)
 
-    aiplatform.init(project=bq_client.project, location=GCP_LOCATION, credentials=credentials)
+    aiplatform.init(
+        project=bq_client.project, location=GCP_LOCATION, credentials=credentials
+    )
     model = aiplatform.Model(model_name=model_id)
     model.deploy(machine_type=machine_type)
     model.wait()
-    
+
     logging.info("Deployed model with display name %r", model.display_name)
 
     return model
@@ -137,21 +145,17 @@ def main(mode: Literal["regression", "classification"]):
     )
 
     aiplatform.init(
-        project=GCP_PROJECT_ID, 
-        location=GCP_LOCATION, 
-        credentials=credentials
+        project=GCP_PROJECT_ID, location=GCP_LOCATION, credentials=credentials
     )
 
     dataset = load_automl_dataset()
     if dataset is None:
         dataset = create_automl_dataset()
-    
+
     config = TrainingConfig(mode=mode)
     print(config)
 
-    model = train_automl_model(
-        aiplatform_dataset=dataset, config=config
-    )
+    model = train_automl_model(aiplatform_dataset=dataset, config=config)
     deploy_model(model.name)
 
 

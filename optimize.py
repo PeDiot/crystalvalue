@@ -23,7 +23,7 @@ def main():
     credentials = service_account.Credentials.from_service_account_file(
         filename=CREDENTIALS_PATH
     )
-    
+
     try:
         config = Config.from_yaml()
         logger.info("Initializing data loader...")
@@ -40,9 +40,7 @@ def main():
 
         logger.info("Creating and saving the best model...")
         best_model = ModelFactory.create_model(
-            model_name=best_trial.params["model"],
-            trial=best_trial,
-            config=config
+            model_name=best_trial.params["model"], trial=best_trial, config=config
         )
         best_model.fit(optimizer.X_train, optimizer.y_train)
 
@@ -50,8 +48,8 @@ def main():
             model=best_model,
             preprocessor=loader.preprocessor,
             feature_selector=optimizer.feature_selector,
-            model_name=best_trial.params['model'], 
-            save_dir=f"{config.save_dir}/{optimizer.study_name}"
+            model_name=best_trial.params["model"],
+            save_dir=f"{config.save_dir}/{optimizer.study_name}",
         )
 
         logger.info("Optimization completed successfully!")

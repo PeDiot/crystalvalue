@@ -26,15 +26,15 @@ WITH
     FROM {project_id}.{dataset_id}.{table_name}
   ),
   CustomerWindows AS (
-    SELECT
+    SELECT DISTINCT
       CAST(TX_DATA.{customer_id_column} AS STRING) AS customer_id,
-      WindowDate.date AS window_date,
-      DATE_SUB((WindowDate.date), INTERVAL {days_lookback} day) AS lookback_start,
-      DATE_ADD((WindowDate.date), INTERVAL 1 day) AS lookahead_start,
-      DATE_ADD((WindowDate.date), INTERVAL {days_lookahead} day) AS lookahead_stop
+      W.date AS window_date,
+      DATE_SUB(W.date, INTERVAL {days_lookback} day) AS lookback_start,
+      DATE_ADD(W.date, INTERVAL 1 day) AS lookahead_start,
+      DATE_ADD(W.date, INTERVAL {days_lookahead} day) AS lookahead_stop
     FROM {project_id}.{dataset_id}.{table_name} AS TX_DATA
+    CROSS JOIN WindowDate W
     {date_window_join_sql}
-    GROUP BY 1, 2, 3, 4
   )
 SELECT
   CustomerWindows.*,
