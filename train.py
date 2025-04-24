@@ -10,16 +10,16 @@ CREDENTIALS_PATH = "gcp_credentials.json"
 
 GCP_PROJECT_ID = "pltv-457408"
 GCP_LOCATION = "europe-west4"
-GCP_DATASET_ID = "crystalvalue_20250424_104512"
+GCP_DATASET_ID = "crystalvalue_20250424_190800"
 GCP_TABLE_ID = "crystalvalue_train_data"
 
 CUSTOMER_ID_COLUMN = "customer_id"
 DATE_COLUMN = "date"
 VALUE_COLUMN = "value"
-IGNORE_COLUMNS = ["order_number", "days_to_next_order", "shipping_address_dept"]
+IGNORE_COLUMNS = ["order_number", "days_to_next_order", "shipping_address_dept", "value"]
 
 LOOKBACK_DAYS = 0
-LOOKAHEAD_DAYS = 365
+LOOKAHEAD_DAYS = 90
 
 _NON_FEATURES = [
     "customer_id",
