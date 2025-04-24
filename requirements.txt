@@ -1,24 +1,4 @@
-# Google Cloud dependencies
 google-cloud-aiplatform>=1.1.1
 google-cloud-bigquery>=2.20.0
 google-cloud-pipeline-components>=0.1.4
 db-dtypes>=1.0.0
-
-# Data processing and scientific computing
-numpy>=1.21.0
-pandas>=1.2.5
-pyarrow>=5.0.0
-scipy>=1.7.1
-scikit-learn>=0.24.2
-
-# Visualization
-matplotlib>=3.4.3
-seaborn>=0.11.2
-pillow>=10.0.1
-
-# Machine Learning
-tensorflow~=2.7
-kfp>=1.8.9
-
-# Protocol Buffers
-protobuf==3.20.3
