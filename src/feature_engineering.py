@@ -46,6 +46,9 @@ _STATIC_NUMERIC_FEATURES = (
     "count_transactions",
 )
 
+_BASE_SELECT_QUERY = "SELECT * FROM Dataset"
+_CUSTOM_SELECT_QUERY = lambda columns_to_exclude: f"SELECT * EXCEPT({', '.join(columns_to_exclude)}) FROM Dataset"
+
 
 def run_load_table_to_bigquery(
     data: pd.DataFrame,
@@ -286,6 +289,7 @@ def build_query(
     input_data_types: Mapping[str, List[str]],
     query_type: str = "train_query",
     numerical_transformations: Collection[str] = _NUMERICAL_TRANSFORMATIONS,
+    string_transformations: Collection[str] = _STRING_TRANSFORMATIONS,
     write_executed_query_file: Optional[str] = None,
     days_lookback: int = 365,
     days_lookahead: int = 365,
@@ -294,6 +298,7 @@ def build_query(
     value_column: str = "value",
     trigger_event_date_column: Optional[str] = None,
     wait_days_to_score_from_event: int = 0,
+    columns_to_exclude: Optional[List[str]] = None,
 ) -> Tuple[str, Mapping[str, List[str]]]:
     """Builds training or prediction query from transaction data through BigQuery.
 
@@ -314,6 +319,7 @@ def build_query(
         _QUERY_TEMPLATE_FILES.
       numerical_transformations: The types of transformations for numerical
         features.
+      string_transformations: The types of transformations for string features.
       write_executed_query_file: File path to write the generated SQL query.
       days_lookback: The number of days to look back to create features.
       days_lookahead: The number of days to look ahead to predict value.
@@ -352,7 +358,7 @@ def build_query(
 
     if "string_or_categorical" in input_data_types:
         for feature in input_data_types["string_or_categorical"]:
-            for transformation in _STRING_TRANSFORMATIONS:
+            for transformation in string_transformations:
                 feature_name = f"{transformation.lower()}_{feature}"
                 feature_exp = _STRING_TRANSFORMATIONS_DEFS[transformation].format(
                     field=feature
@@ -394,6 +400,12 @@ def build_query(
         date_window_join_sql=date_window_join_sql,
         features_sql=", \n".join(features_list),
     )
+
+    if columns_to_exclude:
+        substituted_query = substituted_query.replace(
+            _BASE_SELECT_QUERY, 
+            _CUSTOM_SELECT_QUERY(columns_to_exclude)
+        )
 
     if write_executed_query_file:
         _write_file(substituted_query, write_executed_query_file)
