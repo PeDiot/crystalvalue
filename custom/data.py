@@ -109,59 +109,21 @@ class DataLoader:
     def _query(self, is_training: bool, only_positive_samples: bool = False) -> str:        
         excluded_columns_str = ", ".join([f"{col}" for col in self.config.excluded_columns])
 
-        if is_training and self.config.stratified:
-            return self._stratified_query(excluded_columns_str)
-        
+        if is_training:
+            where_clause = f"WHERE {self.config.train_val_test_split_column} IN ('TRAIN', 'VALIDATE')"
         else:
-            if is_training:
-                where_clause = f"WHERE {self.config.train_val_test_split_column} IN ('TRAIN', 'VALIDATE')"
-            else:
-                where_clause = f"WHERE {self.config.train_val_test_split_column} = 'TEST'"
+            where_clause = f"WHERE {self.config.train_val_test_split_column} = 'TEST'"
 
-            if only_positive_samples:
-                where_clause += f" AND future_value_classification = 1"
+        if only_positive_samples:
+            where_clause += f" AND future_value_classification = 1"
 
-            query = f"""
-            SELECT * EXCEPT({excluded_columns_str}, {self.config.target_column}), {self.config.target_column}
-            FROM {self.config.dataset_id}.{self.config.table_id}
-            {where_clause}
-            """
+        query = f"""
+        SELECT * EXCEPT({excluded_columns_str}, {self.config.target_column}), {self.config.target_column}
+        FROM {self.config.dataset_id}.{self.config.table_id}
+        {where_clause}
+        """
 
         if is_training and self.config.n_samples > 0:
             query += f" LIMIT {self.config.n_samples}"
 
         return query
-    
-    def _stratified_query(self, excluded_columns_str: str) -> str:
-        return f"""
-        WITH total_counts AS (
-            SELECT {self.config.train_val_test_split_column}, COUNT(*) as count
-            FROM {self.config.dataset_id}.{self.config.table_id}
-            WHERE {self.config.train_val_test_split_column} IN ('TRAIN', 'VALIDATE')
-            GROUP BY {self.config.train_val_test_split_column}
-        )
-        , proportions AS (
-            SELECT 
-            {self.config.train_val_test_split_column},
-            count / SUM(count) OVER () as proportion
-            FROM total_counts
-        )
-        , sample AS (
-            SELECT 
-            *,
-            ROW_NUMBER() OVER (PARTITION BY {self.config.train_val_test_split_column} ORDER BY RAND()) as rn
-            FROM {self.config.dataset_id}.{self.config.table_id}
-            WHERE {self.config.train_val_test_split_column} IN ('TRAIN', 'VALIDATE')
-        )
-        , filtered_sample AS (
-            SELECT * EXCEPT({excluded_columns_str}, future_value, rn), future_value
-            FROM sample
-            WHERE rn <= (
-            SELECT CAST({self.config.n_samples} * proportion AS INT64)
-            FROM proportions
-            WHERE proportions.{self.config.train_val_test_split_column} = sample.{self.config.train_val_test_split_column}
-            )
-        )
-        SELECT *
-        FROM filtered_sample
-        """

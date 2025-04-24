@@ -35,10 +35,11 @@ class Config:
         
         if self.target_column == "future_value_classification":
             self.excluded_columns.append("future_value")
+            self.training_mode = "classification"
 
         if self.target_column == "future_value":
             self.excluded_columns.append("future_value_classification")
-        
+            self.training_mode = "regression"
         if self.feature_selection:
             assert (
                 self.feature_selection_method in VALID_FEATURE_SELECTION_METHODS

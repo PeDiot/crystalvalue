@@ -27,9 +27,14 @@ See [`notebook`](notebook.ipynb).
     docker run -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json -v $(pwd)/secrets/gcp_credentials.json:/app/credentials.json crystalvalue-train
     ```
 
-## Optuna
+## Custom
 
-Optimization params are in [`config`](config.yaml).
+Optimize models for classification & regression with optuna. 
+
+**Notes**: 
+- config params are in [`config`](config.yaml)
+- for classification, `future_value_classification` is the target
+- for regression, `future_value` is the target
 
 ### Run
 

@@ -6,7 +6,7 @@ from google.oauth2 import service_account
 
 from custom.config import Config
 from custom.data import DataLoader
-from custom.optimizer import ModelOptimizer
+from custom.optimizer import ClassificationModelOptimizer, RegressionModelOptimizer
 from custom.models import ModelFactory
 from custom.utils import ModelSaver
 
@@ -30,7 +30,12 @@ def main():
         loader = DataLoader(config=config, gcp_credentials=credentials)
 
         logger.info("Starting model optimization...")
-        optimizer = ModelOptimizer(data_loader=loader)
+
+        if config.training_mode == "classification":
+            optimizer = ClassificationModelOptimizer(data_loader=loader)
+        else:
+            optimizer = RegressionModelOptimizer(data_loader=loader)
+
         best_trial = optimizer.optimize()
 
         logger.info("Creating and saving the best model...")
